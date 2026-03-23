@@ -1,0 +1,235 @@
+// ══════════════════════════════════════════════════════════════
+//  Global Styles — E-Commerce Platform
+//  Aesthetic: Dark luxury with sharp amber accents
+// ══════════════════════════════════════════════════════════════
+
+@use '@angular/material' as mat;
+
+// ── Google Fonts ──────────────────────────────────────────────
+// Syne: display/headings — geometric, modern
+// DM Sans: body — clean, readable
+
+// ── CSS Variables ─────────────────────────────────────────────
+:root {
+  // Colors
+  --color-bg:           #0a0a0f;
+  --color-bg-card:      #12121a;
+  --color-bg-elevated:  #1a1a26;
+  --color-border:       rgba(255,255,255,0.08);
+  --color-border-hover: rgba(255,255,255,0.16);
+
+  // Brand
+  --color-accent:       #f59e0b;
+  --color-accent-light: #fbbf24;
+  --color-accent-dark:  #d97706;
+  --color-accent-glow:  rgba(245,158,11,0.15);
+
+  // Text
+  --color-text-primary:   #f8f8f8;
+  --color-text-secondary: rgba(248,248,248,0.6);
+  --color-text-muted:     rgba(248,248,248,0.35);
+
+  // Status
+  --color-success: #10b981;
+  --color-error:   #ef4444;
+  --color-warning: #f59e0b;
+  --color-info:    #3b82f6;
+
+  // Layout
+  --sidebar-width:    260px;
+  --topbar-height:    64px;
+  --content-padding:  32px;
+  --border-radius:    12px;
+  --border-radius-sm: 6px;
+  --border-radius-lg: 20px;
+
+  // Typography
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', sans-serif;
+
+  // Shadows
+  --shadow-card:   0 4px 24px rgba(0,0,0,0.4);
+  --shadow-glow:   0 0 40px rgba(245,158,11,0.12);
+  --shadow-modal:  0 20px 60px rgba(0,0,0,0.8);
+
+  // Transitions
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// ── Angular Material Theme ─────────────────────────────────────
+@include mat.core();
+
+$dark-palette: mat.define-palette(mat.$amber-palette, 500, 300, 700);
+$dark-theme: mat.define-dark-theme((
+  color: (
+    primary: $dark-palette,
+    accent:  $dark-palette,
+    warn:    mat.define-palette(mat.$red-palette)
+  ),
+  typography: mat.define-typography-config(
+    $font-family: 'DM Sans, sans-serif'
+  )
+));
+@include mat.all-component-themes($dark-theme);
+
+// ── Reset & Base ───────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+// ── Typography ─────────────────────────────────────────────────
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-text-primary);
+}
+
+a { color: var(--color-accent); text-decoration: none; transition: color var(--transition); }
+a:hover { color: var(--color-accent-light); }
+
+// ── Scrollbar ─────────────────────────────────────────────────
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-border-hover); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+// ── Utility Classes ────────────────────────────────────────────
+.text-accent    { color: var(--color-accent) !important; }
+.text-muted     { color: var(--color-text-muted) !important; }
+.text-secondary { color: var(--color-text-secondary) !important; }
+.text-success   { color: var(--color-success) !important; }
+.text-error     { color: var(--color-error) !important; }
+
+.font-display { font-family: var(--font-display) !important; }
+
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--transition), box-shadow var(--transition);
+
+  &:hover {
+    border-color: var(--color-border-hover);
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &--accent  { background: var(--color-accent-glow); color: var(--color-accent); border: 1px solid rgba(245,158,11,0.3); }
+  &--success { background: rgba(16,185,129,0.1); color: var(--color-success); border: 1px solid rgba(16,185,129,0.3); }
+  &--error   { background: rgba(239,68,68,0.1);  color: var(--color-error);   border: 1px solid rgba(239,68,68,0.3); }
+}
+
+// ── Angular Material Overrides ─────────────────────────────────
+.mat-mdc-card {
+  background-color: var(--color-bg-card) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--border-radius) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  background-color: var(--color-bg-elevated) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--border-radius-lg) !important;
+}
+
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm) !important;
+}
+
+.mdc-text-field--filled {
+  --mdc-filled-text-field-container-color: var(--color-bg-elevated) !important;
+}
+
+// ── Animations ─────────────────────────────────────────────────
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.3); }
+  50%       { box-shadow: 0 0 0 8px rgba(245,158,11,0); }
+}
+
+.animate-fadeInUp { animation: fadeInUp 0.4s ease forwards; }
+.animate-fadeIn   { animation: fadeIn 0.3s ease forwards; }
+
+// Skeleton loader
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--color-bg-elevated) 25%,
+    rgba(255,255,255,0.06) 50%,
+    var(--color-bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--border-radius-sm);
+}
+
+// ── Loading Spinner ────────────────────────────────────────────
+.app-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+
+  mat-spinner circle {
+    stroke: var(--color-accent) !important;
+  }
+}
+
+// ── Price ──────────────────────────────────────────────────────
+.price {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-accent);
+
+  &--large  { font-size: 1.75rem; }
+  &--medium { font-size: 1.25rem; }
+  &--small  { font-size: 1rem; }
+}
+
+// ── Btn override ───────────────────────────────────────────────
+.mdc-button--raised.mat-primary,
+.mdc-button--unelevated.mat-primary {
+  --mdc-filled-button-container-color: var(--color-accent) !important;
+  --mdc-filled-button-label-text-color: #000 !important;
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
+  border-radius: var(--border-radius-sm) !important;
+}

@@ -1,0 +1,64 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: product-service
+
+  data:
+    mongodb:
+      uri: mongodb://root:Ecom2024@${MONGO_HOST:mongodb.ecommerce.svc.cluster.local}:27017/products_db?authSource=admin&connectTimeoutMS=30000&socketTimeoutMS=30000&serverSelectionTimeoutMS=60000&retryWrites=true&retryReads=true
+
+    redis:
+      host: ${REDIS_HOST:redis-master.ecommerce.svc.cluster.local}
+      port: 6379
+      password: ${REDIS_PASSWORD:Ecom2024}
+      lettuce:
+        shutdown-timeout: 100ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 1800000
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_URL:http://keycloak.keycloak.svc.cluster.local}/realms/ecommerce/protocol/openid-connect/certs
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+      group:
+        # Liveness = JVM vivante uniquement
+        liveness:
+          include: livenessState,ping
+        # Readiness = JVM prête (MongoDB se connecte en arrière-plan via retry)
+        readiness:
+          include: readinessState,ping
+  # Désactiver les health checks des dépendances externes dans /readiness
+  # Elles sont gérées par retry dans le code (DataInitializer, etc.)
+  health:
+    mongo:
+      enabled: false
+    redis:
+      enabled: false
+
+logging:
+  level:
+    com.ecommerce: INFO
+    org.springframework.security: WARN
+    org.springframework.data.mongodb: WARN
+    io.lettuce: WARN

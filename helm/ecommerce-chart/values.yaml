@@ -1,0 +1,196 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  E-Commerce Platform — Helm Values
+#  Environnement: Local (Kind cluster)
+# ═══════════════════════════════════════════════════════════════════════
+
+global:
+  imagePullPolicy: Never
+  namespace: ecommerce
+
+# ───────────────────────────────────────────────────────────────────────
+#  INFRASTRUCTURE
+# ───────────────────────────────────────────────────────────────────────
+
+postgresql:
+  enabled: true
+  image: postgres:16-alpine
+  database: ecommerce_db
+  username: ecom_user
+  password: Ecom2024
+  port: 5432
+  storage: 1Gi
+  resources:
+    requests: { memory: "64Mi",  cpu: "25m" }
+    limits:   { memory: "256Mi", cpu: "300m" }
+
+mongodb:
+  enabled: true
+  image: mongo:7.0
+  rootUsername: root
+  rootPassword: Ecom2024
+  database: products_db
+  port: 27017
+  resources:
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits:   { memory: "512Mi", cpu: "500m" }
+
+redis:
+  enabled: true
+  image: redis:7.2-alpine
+  password: Ecom2024
+  port: 6379
+  resources:
+    requests: { memory: "32Mi",  cpu: "25m" }
+    limits:   { memory: "128Mi", cpu: "200m" }
+
+keycloak:
+  enabled: true
+  image: quay.io/keycloak/keycloak:26.0
+  adminUser: admin
+  adminPassword: Admin2024
+  port: 8080
+  managementPort: 9000
+  nodePort: 30082
+  realm: ecommerce
+  db:
+    image: postgres:16-alpine
+    name: keycloak
+    username: keycloak
+    password: KC2024
+  resources:
+    requests: { memory: "512Mi", cpu: "200m" }
+    limits:   { memory: "900Mi", cpu: "800m" }
+
+prometheus:
+  enabled: true
+  image: prom/prometheus:v2.51.0
+  port: 9090
+  retention: 24h
+  resources:
+    requests: { memory: "128Mi", cpu: "50m" }
+    limits:   { memory: "256Mi", cpu: "300m" }
+
+grafana:
+  enabled: true
+  image: grafana/grafana:10.4.0
+  adminPassword: Grafana2024
+  port: 3000
+  nodePort: 30083
+  resources:
+    requests: { memory: "128Mi", cpu: "50m" }
+    limits:   { memory: "256Mi", cpu: "200m" }
+
+elasticsearch:
+  enabled: true
+  image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+  port: 9200
+  replicas: 1
+  resources:
+    requests: { memory: "512Mi", cpu: "250m" }
+    limits:   { memory: "1Gi", cpu: "1000m" }
+
+kibana:
+  enabled: true
+  image: docker.elastic.co/kibana/kibana:8.13.0
+  port: 5601
+  nodePort: 30084
+  resources:
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits:   { memory: "512Mi", cpu: "500m" }
+
+logstash:
+  enabled: false
+  image: docker.elastic.co/logstash/logstash:8.13.0
+  port: 5000
+  replicas: 1
+  resources:
+    requests: { memory: "128Mi", cpu: "50m" }
+    limits:   { memory: "256Mi", cpu: "300m" }
+
+vault:
+  enabled: false
+  image: hashicorp/vault:1.16.0
+  port: 8200
+  uiPort: 8201
+  nodePort: 30085
+  replicas: 1
+  storagePath: /vault/data
+  resources:
+    requests: { memory: "128Mi", cpu: "50m" }
+    limits:   { memory: "256Mi", cpu: "300m" }
+
+# ───────────────────────────────────────────────────────────────────────
+#  APPLICATIONS
+# ───────────────────────────────────────────────────────────────────────
+
+apiGateway:
+  enabled: true
+  name: api-gateway
+  image: "localhost/ecommerce/api-gateway:local"
+  port: 8080
+  nodePort: 30081
+  replicas: 1
+  livenessPath: /actuator/health/liveness
+  readinessPath: /actuator/health/readiness
+  livenessInitialDelay: 60
+  readinessInitialDelay: 60
+  startupFailureThreshold: 60
+  resources:
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits:   { memory: "512Mi", cpu: "500m" }
+
+productService:
+  enabled: true
+  name: product-service
+  image: "localhost/ecommerce/product-service:local"
+  port: 8082
+  replicas: 1
+  livenessPath: /actuator/health/liveness
+  readinessPath: /actuator/health/readiness
+  livenessInitialDelay: 60
+  readinessInitialDelay: 60
+  startupFailureThreshold: 60
+  resources:
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits:   { memory: "512Mi", cpu: "500m" }
+
+userService:
+  enabled: false
+  name: user-service
+  image: "localhost/ecommerce/user-service:local"
+  port: 8081
+  replicas: 1
+  livenessPath: /actuator/health/liveness
+  readinessPath: /actuator/health/readiness
+  livenessInitialDelay: 60
+  readinessInitialDelay: 60
+  startupFailureThreshold: 60
+  resources:
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits:   { memory: "512Mi", cpu: "500m" }
+
+orderService:
+  enabled: true
+  name: order-service
+  image: "localhost/ecommerce/order-service:local"
+  port: 8083
+  replicas: 1
+  livenessPath: /actuator/health/liveness
+  readinessPath: /actuator/health/readiness
+  livenessInitialDelay: 60
+  readinessInitialDelay: 60
+  startupFailureThreshold: 60
+  resources:
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits:   { memory: "512Mi", cpu: "500m" }
+
+frontend:
+  enabled: true
+  name: frontend
+  image: "localhost/ecommerce/frontend:local"
+  port: 80
+  nodePort: 30080
+  replicas: 1
+  resources:
+    requests: { memory: "32Mi",  cpu: "10m" }
+    limits:   { memory: "64Mi",  cpu: "100m" }

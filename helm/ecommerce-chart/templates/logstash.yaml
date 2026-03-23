@@ -1,0 +1,96 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  LOGSTASH
+# ═══════════════════════════════════════════════════════════════════════
+
+{{- if .Values.logstash.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: monitoring
+  labels: {{- include "ecommerce.labels" . | nindent 4 }}
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    path.data: /usr/share/logstash/data
+    path.logs: /usr/share/logstash/logs
+  logstash.conf: |
+    input {
+      tcp {
+        port => {{ .Values.logstash.port }}
+        codec => json
+      }
+    }
+    output {
+      elasticsearch {
+        hosts => ["http://elasticsearch.monitoring.svc.cluster.local:{{ .Values.elasticsearch.port }}"]
+        index => "ecommerce-logs-%{+YYYY.MM.dd}"
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logstash
+  namespace: monitoring
+  labels: {{- include "ecommerce.labels" . | nindent 4 }}
+    app: logstash
+spec:
+  replicas: {{ .Values.logstash.replicas }}
+  selector:
+    matchLabels:
+      app: logstash
+  template:
+    metadata:
+      labels:
+        app: logstash
+    spec:
+      containers:
+        - name: logstash
+          image: {{ .Values.logstash.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.logstash.port }}
+          env:
+            - name: LS_JAVA_OPTS
+              value: "-Xms256m -Xmx256m"
+          args:
+            - -f
+            - /usr/share/logstash/pipeline/logstash.conf
+          resources: {{- toYaml .Values.logstash.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /usr/share/logstash/config/logstash.yml
+              subPath: logstash.yml
+            - name: pipeline
+              mountPath: /usr/share/logstash/pipeline/logstash.conf
+              subPath: logstash.conf
+      volumes:
+        - name: config
+          configMap:
+            name: logstash-config
+            items:
+              - key: logstash.yml
+                path: logstash.yml
+        - name: pipeline
+          configMap:
+            name: logstash-config
+            items:
+              - key: logstash.conf
+                path: logstash.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: logstash
+  namespace: monitoring
+  labels: {{- include "ecommerce.labels" . | nindent 4 }}
+    app: logstash
+spec:
+  selector:
+    app: logstash
+  ports:
+    - port: {{ .Values.logstash.port }}
+      targetPort: {{ .Values.logstash.port }}
+{{- end }}

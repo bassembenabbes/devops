@@ -1,0 +1,58 @@
+╔══════════════════════════════════════════════════════════════╗
+║          E-Commerce Platform — Déploiement réussi            ║
+╚══════════════════════════════════════════════════════════════╝
+
+Release : {{ .Release.Name }}
+Chart   : {{ .Chart.Name }}-{{ .Chart.Version }}
+Date    : {{ now | date "2006-01-02 15:04:05" }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 SERVICES DÉPLOYÉS
+━━━━━━━━━━━━━━━━━━━━
+{{- if .Values.frontend.enabled }}
+  🌐 Frontend Angular  →  http://localhost:{{ .Values.frontend.nodePort }}
+{{- end }}
+{{- if .Values.apiGateway.enabled }}
+  🔌 API Gateway       →  http://localhost:{{ .Values.apiGateway.nodePort }}/api/v1
+{{- end }}
+{{- if .Values.keycloak.enabled }}
+  🔐 Keycloak Admin    →  http://localhost:{{ .Values.keycloak.nodePort }}
+       Login: {{ .Values.keycloak.adminUser }} / {{ .Values.keycloak.adminPassword }}
+{{- end }}
+{{- if .Values.grafana.enabled }}
+  📊 Grafana           →  http://localhost:{{ .Values.grafana.nodePort }}
+       Login: admin / {{ .Values.grafana.adminPassword }}
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 COMPTES DÉMO
+━━━━━━━━━━━━━━━
+  admin / Admin2024  (ADMIN)
+  alice / Alice2024  (USER)
+  bob   / Bob2024    (SELLER)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 COMMANDES UTILES
+━━━━━━━━━━━━━━━━━━━
+  # Statut pods
+  kubectl get pods -n ecommerce
+  kubectl get pods -n keycloak
+  kubectl get pods -n monitoring
+
+  # Logs en temps réel
+  kubectl logs -n ecommerce -l app=api-gateway -f
+  kubectl logs -n ecommerce -l app=product-service -f
+  kubectl logs -n keycloak  -l app=keycloak -f
+
+  # Tester l'API
+  curl http://localhost:{{ .Values.apiGateway.nodePort }}/api/v1/products
+
+  # Désinstaller
+  helm uninstall {{ .Release.Name }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏳ Note: Keycloak (~3 min) et les JVM Spring Boot (~90s)
+   démarrent lentement. Patientez avant de tester.

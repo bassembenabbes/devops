@@ -1,0 +1,38 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: order-service
+  data:
+    mongodb:
+      uri: mongodb://root:Ecom2024@${MONGO_HOST:mongodb.ecommerce.svc.cluster.local}:27017/orders_db?authSource=admin&connectTimeoutMS=30000&serverSelectionTimeoutMS=60000&retryWrites=true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_URL:http://keycloak.keycloak.svc.cluster.local}/realms/ecommerce/protocol/openid-connect/certs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState,ping
+        readiness:
+          include: readinessState,ping
+  health:
+    mongo:
+      enabled: false
+
+logging:
+  level:
+    com.ecommerce: INFO
+    org.springframework.security: WARN

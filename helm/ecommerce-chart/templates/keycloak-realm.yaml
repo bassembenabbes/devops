@@ -1,0 +1,75 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  KEYCLOAK — Realm ConfigMap (import automatique au démarrage)
+# ═══════════════════════════════════════════════════════════════════════
+{{- if .Values.keycloak.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kc-realm
+  namespace: keycloak
+  labels: {{- include "ecommerce.labels" . | nindent 4 }}
+data:
+  ecommerce-realm.json: |
+    {
+      "realm": "ecommerce",
+      "enabled": true,
+      "displayName": "E-Commerce Platform",
+      "sslRequired": "none",
+      "registrationAllowed": true,
+      "loginWithEmailAllowed": true,
+      "bruteForceProtected": false,
+      "accessTokenLifespan": 600,
+      "roles": {
+        "realm": [
+          {"name":"USER",   "description":"Client standard"},
+          {"name":"ADMIN",  "description":"Administrateur"},
+          {"name":"SELLER", "description":"Vendeur"}
+        ]
+      },
+      "defaultRoles": ["USER"],
+      "clients": [
+        {
+          "clientId": "ecommerce-frontend",
+          "enabled": true,
+          "publicClient": true,
+          "redirectUris": ["*"],
+          "webOrigins": ["*"],
+          "standardFlowEnabled": true,
+          "directAccessGrantsEnabled": true,
+          "attributes": {"pkce.code.challenge.method": "S256"}
+        },
+        {
+          "clientId": "ecommerce-backend",
+          "enabled": true,
+          "publicClient": false,
+          "secret": "backend-secret-2024",
+          "serviceAccountsEnabled": true,
+          "standardFlowEnabled": false
+        }
+      ],
+      "users": [
+        {
+          "username": "admin", "email": "admin@ecommerce.local",
+          "firstName": "Admin", "lastName": "User",
+          "enabled": true, "emailVerified": true,
+          "credentials": [{"type":"password","value":"Admin2024","temporary":false}],
+          "realmRoles": ["USER","ADMIN"]
+        },
+        {
+          "username": "alice", "email": "alice@ecommerce.local",
+          "firstName": "Alice", "lastName": "Dupont",
+          "enabled": true, "emailVerified": true,
+          "credentials": [{"type":"password","value":"Alice2024","temporary":false}],
+          "realmRoles": ["USER"]
+        },
+        {
+          "username": "bob", "email": "bob@ecommerce.local",
+          "firstName": "Bob", "lastName": "Martin",
+          "enabled": true, "emailVerified": true,
+          "credentials": [{"type":"password","value":"Bob2024","temporary":false}],
+          "realmRoles": ["USER","SELLER"]
+        }
+      ]
+    }
+{{- end }}

@@ -1,0 +1,1021 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  GRAFANA — Dashboard ConfigMaps
+# ═══════════════════════════════════════════════════════════════════════
+{{- if .Values.grafana.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-overview
+  namespace: monitoring
+  labels: {{- include "ecommerce.labels" . | nindent 4 }}
+data:
+  01-ecommerce-overview.json: |
+    {
+      "uid": "ecommerce-overview",
+      "title": "\ud83d\uded2 E-Commerce \u2014 Vue d'ensemble",
+      "description": "KPIs globaux, sant\u00e9 des services, trafic en temps r\u00e9el",
+      "tags": [
+        "ecommerce",
+        "overview"
+      ],
+      "timezone": "browser",
+      "refresh": "15s",
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Services UP",
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "orientation": "auto",
+            "colorMode": "background",
+            "graphMode": "none",
+            "textMode": "auto"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": 0
+                  },
+                  {
+                    "color": "orange",
+                    "value": 1
+                  },
+                  {
+                    "color": "green",
+                    "value": 3
+                  }
+                ]
+              },
+              "mappings": [],
+              "unit": "short",
+              "color": {
+                "mode": "thresholds"
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "count(up{job=~\"api-gateway|product-service|frontend\"} == 1)",
+              "legendFormat": "Services actifs",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Requ\u00eates / sec",
+          "gridPos": {
+            "x": 4,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count[1m]))",
+              "legendFormat": "req/s",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Latence P95",
+          "gridPos": {
+            "x": 8,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.5
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
+              "legendFormat": "P95",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Taux d'erreurs",
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.01
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.05
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) / sum(rate(http_server_requests_seconds_count[5m]))",
+              "legendFormat": "Erreurs %",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "CPU Total",
+          "gridPos": {
+            "x": 16,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.6
+                  },
+                  {
+                    "color": "red",
+                    "value": 0.85
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "avg(rate(process_cpu_usage[1m]))",
+              "legendFormat": "CPU",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "RAM Utilis\u00e9e",
+          "gridPos": {
+            "x": 20,
+            "y": 0,
+            "w": 4,
+            "h": 4
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "colorMode": "background",
+            "graphMode": "area"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "thresholds"
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": 0
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 400000000
+                  },
+                  {
+                    "color": "red",
+                    "value": 700000000
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(jvm_memory_used_bytes{area=\"heap\"})",
+              "legendFormat": "Heap JVM",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "\ud83d\udcc8 Trafic HTTP \u2014 Requ\u00eates par seconde",
+          "gridPos": {
+            "x": 0,
+            "y": 4,
+            "w": 16,
+            "h": 8
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 10,
+                "spanNulls": true
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{job=\"product-service\"}[1m]))",
+              "legendFormat": "Product Service",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{job=\"api-gateway\"}[1m]))",
+              "legendFormat": "API Gateway",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "\u26a1 Latence HTTP P50 / P95 / P99",
+          "gridPos": {
+            "x": 16,
+            "y": 4,
+            "w": 8,
+            "h": 8
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi"
+            },
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 5
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
+              "legendFormat": "P50",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
+              "legendFormat": "P95",
+              "refId": "B"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[5m])) by (le))",
+              "legendFormat": "P99",
+              "refId": "C"
+            }
+          ]
+        },
+        {
+          "id": 20,
+          "type": "table",
+          "title": "\ud83d\udd0d Sant\u00e9 des Services",
+          "gridPos": {
+            "x": 0,
+            "y": 12,
+            "w": 12,
+            "h": 7
+          },
+          "options": {
+            "sortBy": [
+              {
+                "displayName": "Service",
+                "desc": false
+              }
+            ],
+            "footer": {
+              "show": false
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "align": "left"
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Status"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  },
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "type": "value",
+                        "options": {
+                          "1": {
+                            "text": "\u2705 UP",
+                            "color": "green"
+                          },
+                          "0": {
+                            "text": "\u274c DOWN",
+                            "color": "red"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.displayMode",
+                    "value": "color-text"
+                  }
+                ]
+              }
+            ]
+          },
+          "targets": [
+            {
+              "expr": "up",
+              "legendFormat": "{{ .job }}",
+              "refId": "A",
+              "instant": true,
+              "format": "table"
+            }
+          ]
+        },
+        {
+          "id": 21,
+          "type": "timeseries",
+          "title": "\u274c Erreurs HTTP 4xx / 5xx",
+          "gridPos": {
+            "x": 12,
+            "y": 12,
+            "w": 12,
+            "h": 7
+          },
+          "options": {
+            "tooltip": {
+              "mode": "multi"
+            },
+            "legend": {
+              "displayMode": "table",
+              "placement": "right",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "custom": {
+                "lineWidth": 2,
+                "fillOpacity": 15
+              },
+              "color": {
+                "mode": "palette-classic"
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{status=~\"4..\"}[1m])) by (status)",
+              "legendFormat": "4xx - {{.status}}",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) by (status)",
+              "legendFormat": "5xx - {{.status}}",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 20,
+          "title": "Order Service",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 4,
+            "x": 8,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "up{job=\"order-service\"}",
+              "legendFormat": "Order Service"
+            }
+          ],
+          "options": {
+            "colorMode": "background",
+            "graphMode": "none",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            }
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 38,
+      "version": 1
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-jvm
+  namespace: monitoring
+  labels: {{- include "ecommerce.labels" . | nindent 4 }}
+data:
+  02-jvm-services.json: |
+    {
+      "uid": "jvm-services",
+      "title": "☕ JVM & Microservices",
+      "description": "Métriques JVM détaillées par service — mémoire heap/non-heap, GC, threads, connexions",
+      "tags": ["jvm", "java", "microservices"],
+      "timezone": "browser",
+      "refresh": "30s",
+      "time": {"from": "now-1h", "to": "now"},
+      "templating": {
+        "list": [{
+          "name": "service",
+          "label": "Service",
+          "type": "query",
+          "query": "label_values(jvm_memory_used_bytes, job)",
+          "current": {},
+          "includeAll": true,
+          "allValue": ".*",
+          "multi": true,
+          "refresh": 2
+        }]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "JVM Heap Utilisé",
+          "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 256000000}, {"color": "red", "value": 512000000}]}
+            }
+          },
+          "targets": [{"expr": "sum(jvm_memory_used_bytes{area=\"heap\", job=~\"$service\"})", "legendFormat": "Heap", "refId": "A"}]
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "JVM Non-Heap",
+          "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 150000000}, {"color": "red", "value": 300000000}]}
+            }
+          },
+          "targets": [{"expr": "sum(jvm_memory_used_bytes{area=\"nonheap\", job=~\"$service\"})", "legendFormat": "Non-Heap", "refId": "A"}]
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Threads Actifs",
+          "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 50}, {"color": "red", "value": 100}]}
+            }
+          },
+          "targets": [{"expr": "sum(jvm_threads_live_threads{job=~\"$service\"})", "legendFormat": "Threads", "refId": "A"}]
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "GC Pause Totale",
+          "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 1}, {"color": "red", "value": 5}]}
+            }
+          },
+          "targets": [{"expr": "sum(jvm_gc_pause_seconds_sum{job=~\"$service\"})", "legendFormat": "GC Pause", "refId": "A"}]
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "📊 Mémoire Heap par Service",
+          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 9},
+          "options": {"tooltip": {"mode": "multi"}, "legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max", "lastNotNull"]}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {"lineWidth": 2, "fillOpacity": 15, "spanNulls": true}
+            }
+          },
+          "targets": [
+            {"expr": "jvm_memory_used_bytes{area=\"heap\", job=~\"$service\"}", "legendFormat": "{{.job}} - heap used", "refId": "A"},
+            {"expr": "jvm_memory_committed_bytes{area=\"heap\", job=~\"$service\"}", "legendFormat": "{{.job}} - heap committed", "refId": "B"}
+          ]
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "🔄 Garbage Collection — Fréquence",
+          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 9},
+          "options": {"tooltip": {"mode": "multi"}, "legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "sum"]}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "custom": {"lineWidth": 2, "fillOpacity": 10}
+            }
+          },
+          "targets": [
+            {"expr": "rate(jvm_gc_pause_seconds_count{job=~\"$service\"}[1m])", "legendFormat": "{{.job}} - {{.action}} {{.cause}}", "refId": "A"}
+          ]
+        },
+        {
+          "id": 12,
+          "type": "timeseries",
+          "title": "🧵 Threads par État",
+          "gridPos": {"x": 0, "y": 13, "w": 12, "h": 8},
+          "options": {"tooltip": {"mode": "multi"}, "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull"]}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {"lineWidth": 2, "fillOpacity": 10}
+            }
+          },
+          "targets": [
+            {"expr": "jvm_threads_live_threads{job=~\"$service\"}", "legendFormat": "{{.job}} - live", "refId": "A"},
+            {"expr": "jvm_threads_daemon_threads{job=~\"$service\"}", "legendFormat": "{{.job}} - daemon", "refId": "B"},
+            {"expr": "jvm_threads_peak_threads{job=~\"$service\"}", "legendFormat": "{{.job}} - peak", "refId": "C"}
+          ]
+        },
+        {
+          "id": 13,
+          "type": "timeseries",
+          "title": "⚙️ CPU Usage par Service",
+          "gridPos": {"x": 12, "y": 13, "w": 12, "h": 8},
+          "options": {"tooltip": {"mode": "multi"}, "legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1,
+              "custom": {"lineWidth": 2, "fillOpacity": 15}
+            }
+          },
+          "targets": [
+            {"expr": "process_cpu_usage{job=~\"$service\"}", "legendFormat": "{{.job}} - process CPU", "refId": "A"},
+            {"expr": "system_cpu_usage{job=~\"$service\"}", "legendFormat": "{{.job}} - system CPU", "refId": "B"}
+          ]
+        },
+        {
+          "id": 14,
+          "type": "timeseries",
+          "title": "🗄️ Pool de Connexions DB (HikariCP)",
+          "gridPos": {"x": 0, "y": 21, "w": 12, "h": 8},
+          "options": {"tooltip": {"mode": "multi"}, "legend": {"displayMode": "table", "placement": "right", "calcs": ["lastNotNull"]}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {"lineWidth": 2, "fillOpacity": 10}
+            }
+          },
+          "targets": [
+            {"expr": "hikaricp_connections_active{job=~\"$service\"}", "legendFormat": "{{.job}} - actives", "refId": "A"},
+            {"expr": "hikaricp_connections_idle{job=~\"$service\"}", "legendFormat": "{{.job}} - idle", "refId": "B"},
+            {"expr": "hikaricp_connections_pending{job=~\"$service\"}", "legendFormat": "{{.job}} - en attente", "refId": "C"},
+            {"expr": "hikaricp_connections_max{job=~\"$service\"}", "legendFormat": "{{.job}} - max", "refId": "D"}
+          ]
+        },
+        {
+          "id": 15,
+          "type": "timeseries",
+          "title": "⏱️ Uptime des Services",
+          "gridPos": {"x": 12, "y": 21, "w": 12, "h": 8},
+          "options": {"tooltip": {"mode": "single"}, "legend": {"displayMode": "list", "placement": "bottom"}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {"lineWidth": 2}
+            }
+          },
+          "targets": [
+            {"expr": "process_uptime_seconds{job=~\"$service\"}", "legendFormat": "{{.job}}", "refId": "A"}
+          ]
+        }
+      ],
+      "schemaVersion": 38,
+      "version": 1
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-infra
+  namespace: monitoring
+  labels: {{- include "ecommerce.labels" . | nindent 4 }}
+data:
+  03-infrastructure.json: |
+    {
+      "uid": "infra-databases",
+      "title": "🏗️ Infrastructure & Bases de Données",
+      "description": "Kubernetes pods, MongoDB, Redis, PostgreSQL — métriques système et état des données",
+      "tags": ["infrastructure", "kubernetes", "database"],
+      "timezone": "browser",
+      "refresh": "30s",
+      "time": {"from": "now-1h", "to": "now"},
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Pods Running",
+          "gridPos": {"x": 0, "y": 0, "w": 4, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": 0}, {"color": "yellow", "value": 3}, {"color": "green", "value": 5}]}
+            }
+          },
+          "targets": [{"expr": "count(kube_pod_status_phase{phase=\"Running\", namespace=\"ecommerce\"})", "legendFormat": "Pods UP", "refId": "A"}]
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Pods en Erreur",
+          "gridPos": {"x": 4, "y": 0, "w": 4, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "red", "value": 1}]}
+            }
+          },
+          "targets": [{"expr": "count(kube_pod_status_phase{phase=~\"Failed|Unknown\", namespace=\"ecommerce\"}) or vector(0)", "legendFormat": "Erreurs", "refId": "A"}]
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Connexions Redis",
+          "gridPos": {"x": 8, "y": 0, "w": 4, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 50}, {"color": "red", "value": 100}]}
+            }
+          },
+          "targets": [{"expr": "redis_connected_clients", "legendFormat": "Clients Redis", "refId": "A"}]
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Redis Mémoire",
+          "gridPos": {"x": 12, "y": 0, "w": 4, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 100000000}, {"color": "red", "value": 200000000}]}
+            }
+          },
+          "targets": [{"expr": "redis_memory_used_bytes", "legendFormat": "RAM Redis", "refId": "A"}]
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Redis Hit Rate",
+          "gridPos": {"x": 16, "y": 0, "w": 4, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": 0}, {"color": "yellow", "value": 0.5}, {"color": "green", "value": 0.8}]}
+            }
+          },
+          "targets": [{"expr": "rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))", "legendFormat": "Hit Rate", "refId": "A"}]
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "Targets Prometheus",
+          "gridPos": {"x": 20, "y": 0, "w": 4, "h": 4},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "none"},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {"mode": "thresholds"},
+              "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": 0}, {"color": "green", "value": 1}]}
+            }
+          },
+          "targets": [{"expr": "count(up == 1)", "legendFormat": "Targets UP", "refId": "A"}]
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "🐳 CPU par Container (Kubernetes)",
+          "gridPos": {"x": 0, "y": 4, "w": 12, "h": 9},
+          "options": {"tooltip": {"mode": "multi"}, "legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max", "lastNotNull"]}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "custom": {"lineWidth": 2, "fillOpacity": 10}
+            }
+          },
+          "targets": [
+            {"expr": "rate(container_cpu_usage_seconds_total{namespace=\"ecommerce\", container!=\"\", container!=\"POD\"}[1m])", "legendFormat": "{{.container}}", "refId": "A"},
+            {"expr": "rate(container_cpu_usage_seconds_total{namespace=\"keycloak\", container!=\"\", container!=\"POD\"}[1m])", "legendFormat": "keycloak/{{.container}}", "refId": "B"}
+          ]
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "💾 RAM par Container (Kubernetes)",
+          "gridPos": {"x": 12, "y": 4, "w": 12, "h": 9},
+          "options": {"tooltip": {"mode": "multi"}, "legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max", "lastNotNull"]}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {"lineWidth": 2, "fillOpacity": 10}
+            }
+          },
+          "targets": [
+            {"expr": "container_memory_working_set_bytes{namespace=\"ecommerce\", container!=\"\", container!=\"POD\"}", "legendFormat": "{{.container}}", "refId": "A"},
+            {"expr": "container_memory_working_set_bytes{namespace=\"keycloak\", container!=\"\", container!=\"POD\"}", "legendFormat": "keycloak/{{.container}}", "refId": "B"}
+          ]
+        },
+        {
+          "id": 20,
+          "type": "timeseries",
+          "title": "⚡ Redis — Opérations/sec",
+          "gridPos": {"x": 0, "y": 13, "w": 12, "h": 8},
+          "options": {"tooltip": {"mode": "multi"}, "legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "custom": {"lineWidth": 2, "fillOpacity": 10}
+            }
+          },
+          "targets": [
+            {"expr": "rate(redis_commands_processed_total[1m])", "legendFormat": "Commandes/s", "refId": "A"},
+            {"expr": "rate(redis_keyspace_hits_total[1m])", "legendFormat": "Cache Hits/s", "refId": "B"},
+            {"expr": "rate(redis_keyspace_misses_total[1m])", "legendFormat": "Cache Misses/s", "refId": "C"}
+          ]
+        },
+        {
+          "id": 21,
+          "type": "timeseries",
+          "title": "🌐 Réseau I/O Kubernetes",
+          "gridPos": {"x": 12, "y": 13, "w": 12, "h": 8},
+          "options": {"tooltip": {"mode": "multi"}, "legend": {"displayMode": "table", "placement": "right", "calcs": ["mean", "max"]}},
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "custom": {"lineWidth": 2, "fillOpacity": 10}
+            }
+          },
+          "targets": [
+            {"expr": "sum(rate(container_network_receive_bytes_total{namespace=\"ecommerce\"}[1m]))", "legendFormat": "↓ Reçu ecommerce", "refId": "A"},
+            {"expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"ecommerce\"}[1m]))", "legendFormat": "↑ Envoyé ecommerce", "refId": "B"}
+          ]
+        },
+        {
+          "id": 30,
+          "type": "table",
+          "title": "📋 État des Pods — Tous Namespaces",
+          "gridPos": {"x": 0, "y": 21, "w": 24, "h": 8},
+          "options": {
+            "sortBy": [{"displayName": "namespace"}],
+            "footer": {"show": true, "reducer": ["count"], "fields": ["Value"]}
+          },
+          "fieldConfig": {
+            "defaults": {"custom": {"align": "left", "minWidth": 100}},
+            "overrides": [
+              {
+                "matcher": {"id": "byName", "options": "Value"},
+                "properties": [
+                  {"id": "displayName", "value": "Status"},
+                  {"id": "mappings", "value": [
+                    {"type": "value", "options": {
+                      "1": {"text": "✅ Running", "color": "green"},
+                      "0": {"text": "❌ Stopped", "color": "red"}
+                    }}
+                  ]},
+                  {"id": "custom.displayMode", "value": "color-background"},
+                  {"id": "custom.width", "value": 140}
+                ]
+              }
+            ]
+          },
+          "targets": [{
+            "expr": "kube_pod_status_ready",
+            "legendFormat": "{{.namespace}} / {{.pod}}",
+            "refId": "A",
+            "instant": true,
+            "format": "table"
+          }]
+        }
+      ],
+      "schemaVersion": 38,
+      "version": 1
+    }
+{{- end }}

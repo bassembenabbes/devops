@@ -1,0 +1,19 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  NAMESPACES — créés avant toute ressource
+#  Préfixe 00- garantit l'ordre d'application par Helm
+# ═══════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: keycloak
+  labels:
+    {{- include "ecommerce.labels" . | nindent 4 }}
+    kubernetes.io/metadata.name: keycloak
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    {{- include "ecommerce.labels" . | nindent 4 }}
+    kubernetes.io/metadata.name: monitoring

@@ -1,0 +1,113 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  data:
+    redis:
+      host: ${REDIS_HOST:redis-master.ecommerce.svc.cluster.local}
+      port: 6379
+      password: ${REDIS_PASSWORD:Ecom2024}
+      timeout: 2000ms
+      # Connexion lazy: ne pas crasher si Redis pas encore prêt
+      lettuce:
+        pool:
+          enabled: false
+        shutdown-timeout: 100ms
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_URL:http://keycloak.keycloak.svc.cluster.local}/realms/ecommerce/protocol/openid-connect/certs
+          issuer-uri: ${KEYCLOAK_ISSUER:http://localhost:30082/realms/ecommerce}
+
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: ["*"]
+            allowedMethods: [GET, POST, PUT, DELETE, PATCH, OPTIONS]
+            allowedHeaders: ["*"]
+            allowCredentials: true
+            maxAge: 3600
+      default-filters:
+        - AddResponseHeader=X-Content-Type-Options, nosniff
+        - AddResponseHeader=X-Frame-Options, DENY
+        - RemoveResponseHeader=X-Powered-By
+        # Dédupliquer CORS headers si un service downstream en ajoute aussi
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+      routes:
+        - id: product-service
+          uri: http://product-service.ecommerce.svc.cluster.local:8082
+          predicates:
+            - Path=/api/v1/products/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: productCB
+                fallbackUri: forward:/fallback
+        - id: order-service
+          uri: http://order-service.ecommerce.svc.cluster.local:8083
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: orderCB
+                fallbackUri: forward:/fallback
+
+        - id: health-check
+          uri: http://localhost:8080
+          predicates:
+            - Path=/health
+          filters:
+            - SetPath=/actuator/health
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+      group:
+        # Liveness = JVM + Netty vivants UNIQUEMENT
+        liveness:
+          include: livenessState,ping
+        # Readiness = JVM prête (Redis/Keycloak = optionnels, check séparé)
+        readiness:
+          include: readinessState,ping
+  # Redis health désactivé dans le check principal (évite 503 si Redis lent)
+  health:
+    redis:
+      enabled: false
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      productCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        timeoutDuration: 10s
+      orderCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        timeoutDuration: 10s
+
+logging:
+  level:
+    org.springframework.cloud.gateway: WARN
+    org.springframework.security: WARN
+    io.lettuce: WARN
+    com.ecommerce: INFO

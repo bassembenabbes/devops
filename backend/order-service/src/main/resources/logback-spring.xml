@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>logstash.monitoring.svc.cluster.local:5000</destination>
+        <reconnectionDelay>10 seconds</reconnectionDelay>      <!-- ← AJOUTER -->
+        <keepAliveDuration>5 minutes</keepAliveDuration>        <!-- ← AJOUTER -->
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeCallerData>false</includeCallerData>
+        </encoder>
+    </appender>
+
+    <!-- Appender async pour ne pas bloquer les threads métier -->
+    <appender name="ASYNC_LOGSTASH" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="LOGSTASH"/>
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>                          <!-- ← ne jamais bloquer si Logstash down -->
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="ASYNC_LOGSTASH"/>                   <!-- ← async, pas direct -->
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
