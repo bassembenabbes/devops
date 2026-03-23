@@ -4,23 +4,23 @@
 
     <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
         <destination>logstash.monitoring.svc.cluster.local:5000</destination>
-        <reconnectionDelay>10 seconds</reconnectionDelay>      <!-- ← AJOUTER -->
-        <keepAliveDuration>5 minutes</keepAliveDuration>        <!-- ← AJOUTER -->
+        <reconnectionDelay>30 seconds</reconnectionDelay>
+        <keepAliveDuration>5 minutes</keepAliveDuration>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <includeCallerData>false</includeCallerData>
         </encoder>
     </appender>
 
-    <!-- Appender async pour ne pas bloquer les threads métier -->
     <appender name="ASYNC_LOGSTASH" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="LOGSTASH"/>
         <queueSize>512</queueSize>
         <discardingThreshold>0</discardingThreshold>
-        <neverBlock>true</neverBlock>                          <!-- ← ne jamais bloquer si Logstash down -->
+        <neverBlock>true</neverBlock>
     </appender>
 
     <root level="INFO">
-        <appender-ref ref="ASYNC_LOGSTASH"/>                   <!-- ← async, pas direct -->
         <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_LOGSTASH"/>
     </root>
+
 </configuration>

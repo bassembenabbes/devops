@@ -4,14 +4,36 @@ server:
 spring:
   application:
     name: order-service
+
+  # ── Vault optionnel ────────────────────────────────────────────────────
+  config:
+    import: "optional:vault://"
+
+  cloud:
+    vault:
+      uri: http://vault.monitoring.svc.cluster.local:8200
+      fail-fast: false                          # ← ne pas crasher si Vault absent
+      authentication: kubernetes
+      kubernetes:
+        role: ecommerce-app
+        service-account-token-file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      kv:
+        enabled: true
+        backend: kv
+        default-context: ecommerce
+        application-name: database
+
+  # ── MongoDB ────────────────────────────────────────────────────────────
   data:
     mongodb:
-      uri: mongodb://root:Ecom2024@${MONGO_HOST:mongodb.ecommerce.svc.cluster.local}:27017/orders_db?authSource=admin&connectTimeoutMS=30000&serverSelectionTimeoutMS=60000&retryWrites=true
+      uri: mongodb://${mongodb_root_username:root}:${mongodb_root_password:Ecom2024}@${MONGO_HOST:mongodb.ecommerce.svc.cluster.local}:27017/orders_db?authSource=admin&connectTimeoutMS=30000&serverSelectionTimeoutMS=60000&retryWrites=true
+
+  # ── Keycloak ───────────────────────────────────────────────────────────
   security:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: ${KEYCLOAK_URL:http://keycloak.keycloak.svc.cluster.local}/realms/ecommerce/protocol/openid-connect/certs
+          jwk-set-uri: ${KEYCLOAK_URL:http://keycloak.keycloak.svc.cluster.local:8080}/realms/ecommerce/protocol/openid-connect/certs
 
 management:
   endpoints:
@@ -36,3 +58,4 @@ logging:
   level:
     com.ecommerce: INFO
     org.springframework.security: WARN
+    org.springframework.vault: WARN            # ← réduire les logs Vault

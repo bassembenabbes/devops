@@ -5,26 +5,26 @@ spring:
   application:
     name: api-gateway
 
-  data:
-    redis:
-      host: ${REDIS_HOST:redis-master.ecommerce.svc.cluster.local}
-      port: 6379
-      password: ${REDIS_PASSWORD:Ecom2024}
-      timeout: 2000ms
-      # Connexion lazy: ne pas crasher si Redis pas encore prêt
-      lettuce:
-        pool:
-          enabled: false
-        shutdown-timeout: 100ms
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          jwk-set-uri: ${KEYCLOAK_URL:http://keycloak.keycloak.svc.cluster.local}/realms/ecommerce/protocol/openid-connect/certs
-          issuer-uri: ${KEYCLOAK_ISSUER:http://localhost:30082/realms/ecommerce}
+  # ── Vault optionnel — ne crashe pas si Vault pas encore prêt ──────────
+  config:
+    import: "optional:vault://"
 
   cloud:
+    # ── Vault ──────────────────────────────────────────────────────────
+    vault:
+      uri: http://vault.monitoring.svc.cluster.local:8200
+      fail-fast: false                          # ← ne pas crasher si Vault absent
+      authentication: kubernetes
+      kubernetes:
+        role: ecommerce-app
+        service-account-token-file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      kv:
+        enabled: true
+        backend: kv
+        default-context: ecommerce
+        application-name: database
+
+    # ── Gateway ────────────────────────────────────────────────────────
     gateway:
       globalcors:
         cors-configurations:
@@ -38,7 +38,6 @@ spring:
         - AddResponseHeader=X-Content-Type-Options, nosniff
         - AddResponseHeader=X-Frame-Options, DENY
         - RemoveResponseHeader=X-Powered-By
-        # Dédupliquer CORS headers si un service downstream en ajoute aussi
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
       routes:
         - id: product-service
@@ -48,8 +47,8 @@ spring:
           filters:
             - name: CircuitBreaker
               args:
-                name: productCB
-                fallbackUri: forward:/fallback
+                name: product-service
+                fallbackUri: forward:/fallback/product-service
         - id: order-service
           uri: http://order-service.ecommerce.svc.cluster.local:8083
           predicates:
@@ -57,15 +56,40 @@ spring:
           filters:
             - name: CircuitBreaker
               args:
-                name: orderCB
-                fallbackUri: forward:/fallback
-
-        - id: health-check
-          uri: http://localhost:8080
+                name: order-service
+                fallbackUri: forward:/fallback/order-service
+        - id: user-service
+          uri: http://user-service.ecommerce.svc.cluster.local:8081
           predicates:
-            - Path=/health
+            - Path=/api/v1/users/**
           filters:
-            - SetPath=/actuator/health
+            - name: CircuitBreaker
+              args:
+                name: user-service
+                fallbackUri: forward:/fallback/user-service
+
+  # ── Redis ──────────────────────────────────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:redis.ecommerce.svc.cluster.local}
+      port: 6379
+      password: ${REDIS_PASSWORD:Ecom2024}     # ← valeur par défaut ajoutée
+      timeout: 2000ms
+      lettuce:
+        pool:
+          enabled: false
+        shutdown-timeout: 100ms
+
+  # ── Keycloak ───────────────────────────────────────────────────────────
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_URL:http://keycloak.keycloak.svc.cluster.local:8080}/realms/ecommerce/protocol/openid-connect/certs
+          issuer-uri: ${KEYCLOAK_ISSUER:http://localhost:30082/realms/ecommerce}
+
+fallback:
+  message: "Service non disponible pour le moment. Veuillez réessayer plus tard."
 
 management:
   endpoints:
@@ -78,13 +102,10 @@ management:
       probes:
         enabled: true
       group:
-        # Liveness = JVM + Netty vivants UNIQUEMENT
         liveness:
           include: livenessState,ping
-        # Readiness = JVM prête (Redis/Keycloak = optionnels, check séparé)
         readiness:
           include: readinessState,ping
-  # Redis health désactivé dans le check principal (évite 503 si Redis lent)
   health:
     redis:
       enabled: false
@@ -110,4 +131,5 @@ logging:
     org.springframework.cloud.gateway: WARN
     org.springframework.security: WARN
     io.lettuce: WARN
+    org.springframework.vault: WARN          # ← réduire les logs Vault
     com.ecommerce: INFO
